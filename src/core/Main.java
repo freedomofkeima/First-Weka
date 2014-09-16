@@ -12,6 +12,7 @@ import classifier.ClassifyAlgorithm;
 import loader.LoadARFF;
 import loader.LoadCSV;
 import weka.classifiers.Classifier;
+import weka.classifiers.Evaluation;
 import weka.core.Attribute;
 import weka.core.Instances;
 
@@ -32,15 +33,14 @@ public class Main {
 		Classifier cModel = null;
 		String input, input2;
 
-		BufferedReader reader = new BufferedReader(new InputStreamReader(
-				System.in));
+		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 		while (true) {
 			TextWriter.printMainMenu();
 			input = reader.readLine();
 
 			switch (input) {
 			case "1":
-				/** Load from .arff*/
+				/** Load from .arff */
 				TextWriter.printLoadMenu();
 				input2 = reader.readLine();
 				if (input2.equals("1")) {
@@ -48,7 +48,8 @@ public class Main {
 				} else if (input2.equals("2")) {
 					data = LoadARFF.loadARFF(Constants.ARFF_NUMERIC_PATH);
 				}
-				data.setClassIndex(data.numAttributes() - 1); // Set play {yes, no}
+				// Set play {yes, no}
+				data.setClassIndex(data.numAttributes() - 1);
 				break;
 			case "2":
 				/** Load from .csv */
@@ -59,65 +60,101 @@ public class Main {
 				} else if (input2.equals("2")) {
 					data = LoadCSV.loadCSV(Constants.CSV_NUMERIC_PATH);
 				}
-				data.setClassIndex(data.numAttributes() - 1); // Set play {yes, no}
+				// Set play {yes, no}
+				data.setClassIndex(data.numAttributes() - 1);
 				break;
 			case "3":
 				/** Remove attribute (outlook) */
-				Enumeration<Attribute> e;
-				
-				e = data.enumerateAttributes();
-				TextWriter.printEnumerationAttribute(e);
+				if (data != null) {
+					Enumeration<Attribute> e;
 
-				data.deleteAttributeAt(0); // Delete first attribute - Outlook
-				
-				e = data.enumerateAttributes();
-				TextWriter.printEnumerationAttribute(e);
+					e = data.enumerateAttributes();
+					TextWriter.printEnumerationAttribute(e);
+					// Delete first attribute - Outlook
+					data.deleteAttributeAt(0);
+
+					e = data.enumerateAttributes();
+					TextWriter.printEnumerationAttribute(e);
+				} else {
+					System.out.println("You need to load your data first!");
+				}
 				break;
 			case "4":
 				/** Filter (resample) */
-				System.out.println("# Previous : " + data.numInstances());
-				data = SupervisedFilter.resampleInstances(data);
-				System.out.println("# After : " + data.numInstances());
+				if (data != null) {
+					System.out.println("# Previous : " + data.numInstances());
+					data = SupervisedFilter.resampleInstances(data);
+					System.out.println("# After : " + data.numInstances());
+				} else {
+					System.out.println("You need to load your data first!");
+				}
 				break;
 			case "5":
 				/** Build classifier with Naive Bayes */
-				TextWriter.printClassifierMenu();
-				input2 = reader.readLine();
-				if (input2.equals("1")) {
-					cModel = ClassifyAlgorithm.naiveBayesAlgorithm(data, 1);
-				} else if (input2.equals("2")) {
-					cModel = ClassifyAlgorithm.naiveBayesAlgorithm(data, 2);
+				if (data != null) {
+					TextWriter.printClassifierMenu();
+					input2 = reader.readLine();
+					if (input2.equals("1")) {
+						cModel = ClassifyAlgorithm.naiveBayesAlgorithm(data, 1);
+					} else if (input2.equals("2")) {
+						cModel = ClassifyAlgorithm.naiveBayesAlgorithm(data, 2);
+					}
+				} else {
+					System.out.println("You need to load your data first!");
 				}
 				break;
 			case "6":
 				/** Build classifier with DT */
-				TextWriter.printClassifierMenu();
-				input2 = reader.readLine();
-				if (input2.equals("1")) {
-					cModel = ClassifyAlgorithm.iD3Algorithm(data, 1);
-				} else if (input2.equals("2")) {
-					cModel = ClassifyAlgorithm.iD3Algorithm(data, 2);
+				if (data != null) {
+					TextWriter.printClassifierMenu();
+					input2 = reader.readLine();
+					if (input2.equals("1")) {
+						cModel = ClassifyAlgorithm.iD3Algorithm(data, 1);
+					} else if (input2.equals("2")) {
+						cModel = ClassifyAlgorithm.iD3Algorithm(data, 2);
+					}
+				} else {
+					System.out.println("You need to load your data first!");
 				}
 				break;
 			case "7":
-				/** Testing model given test set */
-				
+				/** Testing model given test set (Assume train = test) */
+				if (cModel != null) {
+					Evaluation eval = new Evaluation(data);
+					eval.evaluateModel(cModel, data);
+					System.out.println(eval.toSummaryString(
+							"\nResults\n======\n", false));
+				} else {
+					System.out.println("You need to build classifier first!");
+				}
 				break;
 			case "8":
 				/** Testing model to classify one unseen data */
-				
+				if (cModel != null) {
+
+				} else {
+					System.out.println("You need to build classifier first!");
+				}
 				break;
 			case "9":
 				/** Save model */
-				
+				if (cModel != null) {
+
+				} else {
+					System.out.println("You need to build classifier first!");
+				}
 				break;
 			case "10":
 				/** Load model */
-				
+
 				break;
 			case "11":
 				/** Classify using extended classifier */
-				
+				if (cModel != null) {
+
+				} else {
+					System.out.println("You need to build classifier first!");
+				}
 				break;
 			case "999":
 				System.out.println("Goodbye!");
