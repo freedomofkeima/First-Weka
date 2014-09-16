@@ -7,7 +7,8 @@ import weka.core.converters.ArffLoader;
 
 /**
  * ARFF Loader for Application
- * This file is adapted from /wekaexamples/core/converters/LoadDataFromArffFile.java
+ * This file is adapted from 
+ * /wekaexamples/core/converters/LoadDataFromArffFile.java
  * 
  * @author Iskandar Setiadi
  * @version 0.1, by IS @since September 16, 2014

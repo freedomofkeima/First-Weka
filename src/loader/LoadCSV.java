@@ -6,7 +6,8 @@ import weka.core.Instances;
 import weka.core.converters.CSVLoader;
 
 /**
- * CSV Loader for Application This file is adapted from
+ * CSV Loader for Application 
+ * This file is adapted from
  * /wekaexamples/core/converters/LoadDataFromCsvFile.java
  * 
  * @author Iskandar Setiadi
