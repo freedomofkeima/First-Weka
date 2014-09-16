@@ -13,4 +13,5 @@ public class Constants {
 	public static String ARFF_NUMERIC_PATH = "./data/weather.numeric.arff";
 	public static String CSV_NOMINAL_PATH = "./data/weather.nominal.csv";
 	public static String CSV_NUMERIC_PATH = "./data/weather.numeric.csv";
+	public static String SAVE_MODEL_PATH = "./data/weather.model";
 }

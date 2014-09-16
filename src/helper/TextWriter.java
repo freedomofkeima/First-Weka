@@ -34,7 +34,7 @@ public class TextWriter {
 		System.out.println("8 - Testing model to classify one unseen data");
 		System.out.println("9 - Save model");
 		System.out.println("10 - Load model");
-		System.out.println("11 - Classify using extended classifier");
+		System.out.println("11 - Create an extended Classifier");
 		System.out.println("999 - Exit");
 		System.out.print("Input: ");
 	}

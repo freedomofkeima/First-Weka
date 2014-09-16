@@ -2,6 +2,7 @@ package core;
 
 import filter.SupervisedFilter;
 import helper.Constants;
+import helper.FileHelper;
 import helper.TextWriter;
 
 import java.io.BufferedReader;
@@ -9,11 +10,13 @@ import java.io.InputStreamReader;
 import java.util.Enumeration;
 
 import classifier.ClassifyAlgorithm;
+import classifier.CustomAlgorithm;
 import loader.LoadARFF;
 import loader.LoadCSV;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.core.Attribute;
+import weka.core.Instance;
 import weka.core.Instances;
 
 /**
@@ -32,6 +35,7 @@ public class Main {
 		Instances data = null;
 		Classifier cModel = null;
 		String input, input2;
+		boolean isNominal = true;
 
 		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 		while (true) {
@@ -47,6 +51,7 @@ public class Main {
 					data = LoadARFF.loadARFF(Constants.ARFF_NOMINAL_PATH);
 				} else if (input2.equals("2")) {
 					data = LoadARFF.loadARFF(Constants.ARFF_NUMERIC_PATH);
+					isNominal = false;
 				}
 				// Set play {yes, no}
 				data.setClassIndex(data.numAttributes() - 1);
@@ -59,6 +64,7 @@ public class Main {
 					data = LoadCSV.loadCSV(Constants.CSV_NOMINAL_PATH);
 				} else if (input2.equals("2")) {
 					data = LoadCSV.loadCSV(Constants.CSV_NUMERIC_PATH);
+					isNominal = false;
 				}
 				// Set play {yes, no}
 				data.setClassIndex(data.numAttributes() - 1);
@@ -131,7 +137,24 @@ public class Main {
 			case "8":
 				/** Testing model to classify one unseen data */
 				if (cModel != null) {
-
+					Instance test = new Instance(5);
+					if (isNominal) {
+						test.setValue(data.attribute(0), "sunny");
+						test.setValue(data.attribute(1), "mild");
+						test.setValue(data.attribute(2), "high");
+						test.setValue(data.attribute(3), "FALSE");
+					} else {
+						test.setValue(data.attribute(0), "rainy");
+						test.setValue(data.attribute(1), 65);
+						test.setValue(data.attribute(2), 70);
+						test.setValue(data.attribute(3), "TRUE");
+					}
+					// Give access to dataset
+					test.setDataset(data);
+					
+					System.out.print("Classifying result: ");
+					System.out.println(data.attribute(data.numAttributes() - 1).
+							value((int) cModel.classifyInstance(test)));
 				} else {
 					System.out.println("You need to build classifier first!");
 				}
@@ -139,22 +162,25 @@ public class Main {
 			case "9":
 				/** Save model */
 				if (cModel != null) {
-
+					FileHelper.saveModel(cModel, Constants.SAVE_MODEL_PATH);
 				} else {
 					System.out.println("You need to build classifier first!");
 				}
 				break;
 			case "10":
 				/** Load model */
-
+				cModel = FileHelper.loadModel(Constants.SAVE_MODEL_PATH);
 				break;
 			case "11":
-				/** Classify using extended classifier */
-				if (cModel != null) {
-
-				} else {
-					System.out.println("You need to build classifier first!");
-				}
+				/** Create an extended classifier */
+				cModel = new CustomAlgorithm();
+				cModel.buildClassifier(data);
+				
+				// Test to classify data1
+				Evaluation eval = new Evaluation(data);
+				eval.evaluateModel(cModel, data);
+				System.out.println(eval.toSummaryString(
+						"\nResults\n======\n", false));
 				break;
 			case "999":
 				System.out.println("Goodbye!");
