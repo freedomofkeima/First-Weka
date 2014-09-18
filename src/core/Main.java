@@ -173,14 +173,18 @@ public class Main {
 				break;
 			case "11":
 				/** Create an extended classifier */
-				cModel = new CustomAlgorithm();
-				cModel.buildClassifier(data);
-				
-				// Test to classify data1
-				Evaluation eval = new Evaluation(data);
-				eval.evaluateModel(cModel, data);
-				System.out.println(eval.toSummaryString(
-						"\nResults\n======\n", false));
+				if (data != null) {
+					cModel = new CustomAlgorithm();
+					cModel.buildClassifier(data);
+					
+					// Test to classify data1
+					Evaluation eval = new Evaluation(data);
+					eval.evaluateModel(cModel, data);
+					System.out.println(eval.toSummaryString(
+							"\nResults\n======\n", false));
+				} else {
+					System.out.println("You need to load your data first!");
+				}
 				break;
 			case "999":
 				System.out.println("Goodbye!");
