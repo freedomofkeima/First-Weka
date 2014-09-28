@@ -8,9 +8,8 @@ import helper.TextWriter;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Enumeration;
+import java.util.Random;
 
-import classifier.ClassifyAlgorithm;
-import classifier.CustomAlgorithm;
 import loader.LoadARFF;
 import loader.LoadCSV;
 import weka.classifiers.Classifier;
@@ -18,6 +17,9 @@ import weka.classifiers.Evaluation;
 import weka.core.Attribute;
 import weka.core.Instance;
 import weka.core.Instances;
+import classifier.ClassifyAlgorithm;
+import classifier.CustomAlgorithm;
+import classifier.myID3;
 
 /**
  * Main class for Weka
@@ -152,7 +154,7 @@ public class Main {
 					// Give access to dataset
 					test.setDataset(data);
 					
-					System.out.print("Classifying result: ");
+					System.out.println("Classifying result:");
 					System.out.println(data.attribute(data.numAttributes() - 1).
 							value((int) cModel.classifyInstance(test)));
 				} else {
@@ -182,6 +184,21 @@ public class Main {
 					eval.evaluateModel(cModel, data);
 					System.out.println(eval.toSummaryString(
 							"\nResults\n======\n", false));
+				} else {
+					System.out.println("You need to load your data first!");
+				}
+				break;
+			case "12":
+				/** Custom ID3 implementation */
+				if (data != null) {
+					cModel = new myID3();
+					/** 10 Cross-fold */
+					Evaluation eval = new Evaluation(data);
+					eval.crossValidateModel(cModel, data, 10, new Random(1));
+					System.out.println(eval.toSummaryString("\nResults\n======\n", false));
+					cModel.buildClassifier(data);
+					System.out.println(cModel.toString());
+					/** End of Building Model section */
 				} else {
 					System.out.println("You need to load your data first!");
 				}

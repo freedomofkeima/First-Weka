@@ -35,6 +35,7 @@ public class TextWriter {
 		System.out.println("9 - Save model");
 		System.out.println("10 - Load model");
 		System.out.println("11 - Create an extended Classifier");
+		System.out.println("12 - Using Custom ID3 implementation");
 		System.out.println("999 - Exit");
 		System.out.print("Input: ");
 	}
