@@ -14,6 +14,7 @@ import loader.LoadARFF;
 import loader.LoadCSV;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
+import weka.classifiers.trees.Id3;
 import weka.core.Attribute;
 import weka.core.Instance;
 import weka.core.Instances;
@@ -31,7 +32,7 @@ import classifier.myID3;
 
 public class Main {
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static void main(String[] args) throws Exception {
 
 		Instances data = null;
@@ -39,7 +40,8 @@ public class Main {
 		String input, input2;
 		boolean isNominal = true;
 
-		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+		BufferedReader reader = new BufferedReader(new InputStreamReader(
+				System.in));
 		while (true) {
 			TextWriter.printMainMenu();
 			input = reader.readLine();
@@ -153,10 +155,10 @@ public class Main {
 					}
 					// Give access to dataset
 					test.setDataset(data);
-					
+
 					System.out.println("Classifying result:");
-					System.out.println(data.attribute(data.numAttributes() - 1).
-							value((int) cModel.classifyInstance(test)));
+					System.out.println(data.attribute(data.numAttributes() - 1)
+							.value((int) cModel.classifyInstance(test)));
 				} else {
 					System.out.println("You need to build classifier first!");
 				}
@@ -178,7 +180,7 @@ public class Main {
 				if (data != null) {
 					cModel = new CustomAlgorithm();
 					cModel.buildClassifier(data);
-					
+
 					// Test to classify data1
 					Evaluation eval = new Evaluation(data);
 					eval.evaluateModel(cModel, data);
@@ -195,10 +197,76 @@ public class Main {
 					/** 10 Cross-fold */
 					Evaluation eval = new Evaluation(data);
 					eval.crossValidateModel(cModel, data, 10, new Random(1));
-					System.out.println(eval.toSummaryString("\nResults\n======\n", false));
+					System.out.println(eval.toSummaryString(
+							"\nResults\n======\n", false));
 					cModel.buildClassifier(data);
 					System.out.println(cModel.toString());
 					/** End of Building Model section */
+				} else {
+					System.out.println("You need to load your data first!");
+				}
+				break;
+			case "13":
+			case "14":
+				if (data != null) {
+					Instances data_complement = LoadARFF
+							.loadARFF(Constants.ARFF_NOMINAL_COMPLEMENT_PATH);
+
+					if (input.equals("13")) {
+						cModel = new myID3();
+					} else {
+						cModel = new Id3();
+					}
+
+					Evaluation eval = new Evaluation(data);
+					cModel.buildClassifier(data);
+					System.out.println(cModel.toString());
+
+					/** Classify dataset complement */
+					Enumeration instEnum = data_complement.enumerateInstances();
+					while (instEnum.hasMoreElements()) {
+						Instance inst = (Instance) instEnum.nextElement();
+						inst.setDataset(data);
+						System.out.println(inst.toString());
+						System.out.println("Classifying result:");
+						double value = cModel.classifyInstance(inst);
+						inst.setClassValue(value);
+						System.out.println(data.attribute(
+								data.numAttributes() - 1).value((int) value));
+						System.out.println();
+					}
+
+					/** Re-evaluate back */
+					System.out.println("Re-evaluate dataset 3 with model 1:");
+					eval.evaluateModel(cModel, data_complement);
+					System.out.println();
+					System.out.println(eval.toSummaryString(
+							"\nResults\n======\n", false));
+
+					Instances data_noise = LoadARFF
+							.loadARFF(Constants.ARFF_NOMINAL_NOISE_PATH);
+					Classifier cModel_noise;
+
+					if (input.equals("13")) {
+						cModel_noise = new myID3();
+					} else {
+						cModel_noise = new Id3();
+					}
+
+					// Set play {yes, no}
+					data_noise.setClassIndex(data_noise.numAttributes() - 1);
+
+					Evaluation eval_noise = new Evaluation(data_noise);
+					cModel_noise.buildClassifier(data_noise);
+					System.out.println(cModel_noise.toString());
+
+					/** Evaluate dataset 3 with model 2 */
+					System.out.println("Evaluate dataset 3 with model 2:");
+					eval_noise.evaluateModel(cModel_noise, data_complement);
+					System.out.println();
+					System.out.println(eval_noise.toSummaryString(
+							"\nResults\n======\n", false));
+
 				} else {
 					System.out.println("You need to load your data first!");
 				}

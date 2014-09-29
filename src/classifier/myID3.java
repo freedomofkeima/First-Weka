@@ -1,6 +1,8 @@
 package classifier;
 
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 
 import weka.classifiers.Classifier;
 import weka.core.Attribute;
@@ -8,322 +10,225 @@ import weka.core.Capabilities;
 import weka.core.Capabilities.Capability;
 import weka.core.Instance;
 import weka.core.Instances;
-import weka.core.NoSupportForMissingValuesException;
 import weka.core.Utils;
 
 /**
  * Custom ID3 Implementation (extends Classifier)
  * 
  * @author WbTeladan
- * @version 0.1, by WbTeladan @since September 27, 2014
+ * @version 0.1, by WbTeladan @since September 28, 2014
  *
  */
 
+@SuppressWarnings("serial")
 public class myID3 extends Classifier {
 
-	/** Serializable */
-	private static final long serialVersionUID = 5616209221366222508L;
+	private static double EMPTY_VALUE = Instance.missingValue();
+	private static Attribute node_attribute;
+	private static String[] attribute_title;
 
-	/** The node's successors. */
-	private myID3[] successors;
+	private double classification;
+	private Attribute node_value;
+	private boolean isChecked = false;
+	private myID3[] next_node;
+	private double[] IG;
 
-	/** Attribute used for splitting. */
-	private Attribute attribute;
-
-	/** Class value if node is leaf. */
-	private double classValue;
-
-	/** Class distribution if node is leaf. */
-	private double[] distribution;
-
-	/** Class attribute of dataset. */
-	private Attribute classAttribute;
-
-	/** Class attribute of dataset. */
-	private String[] anotherCA;
-
-	/** Information Gain */
-	private double[] infoGains;
-
-	/**
-	 * Returns default capabilities of the classifier
-	 *
-	 * @return the capabilities of this classifier
-	 */
-	public Capabilities getCapabilities() {
-		Capabilities result = super.getCapabilities();
-		result.disableAll();
-
-		// Accept Nominal Attributes (only)
-		result.enable(Capability.NOMINAL_ATTRIBUTES);
-
-		// Accept Nominal Class & Missing Class Values
-		result.enable(Capability.NOMINAL_CLASS);
-		result.enable(Capability.MISSING_CLASS_VALUES);
-
-		// Minimum number of instances
-		result.setMinimumNumberInstances(0);
-
-		return result;
-	}
-
-	/**
-	 * Builds Custom Id3 decision tree classifier
-	 *
-	 * @param data
-	 *            the training data
-	 * @exception Exception
-	 *                if classifier can't be built successfully
-	 */
-	public void buildClassifier(Instances data) throws Exception {
-
-		// check data capabilities
-		getCapabilities().testWithFail(data);
-
-		// remove instances with missing class (pre-process)
-		data = new Instances(data);
-		data.deleteWithMissingClass();
-
-		// create a new Tree from training data
-		makeTree(data);
-	}
-
-	/**
-	 * Method for building a custom Id3 tree
-	 *
-	 * @param data
-	 *            the training data
-	 * @exception Exception
-	 *                if decision tree can't be built successfully
-	 */
 	@SuppressWarnings("rawtypes")
-	private void makeTree(Instances data) throws Exception {
+	@Override
+	public void buildClassifier(Instances arg0) throws Exception {
+		Capabilities check_cap = super.getCapabilities();
+		check_cap.disableAll();
+		check_cap.enable(Capability.NOMINAL_ATTRIBUTES);
+		check_cap.enable(Capability.NOMINAL_CLASS);
+		check_cap.enable(Capability.MISSING_CLASS_VALUES);
+		check_cap.setMinimumNumberInstances(0);
+		check_cap.testWithFail(arg0);
 
-		// Check if no instances have reached this node.
-		if (data.numInstances() == 0) {
-			attribute = null;
-			classValue = Instance.missingValue();
-			distribution = new double[data.numClasses()];
+		arg0.deleteWithMissingClass();
+
+		if (attribute_title == null) {
+			int count = 0;
+			attribute_title = new String[arg0.numAttributes()];
+			Enumeration e = arg0.enumerateAttributes();
+			while (e.hasMoreElements()) {
+				attribute_title[count] = ((Attribute) e.nextElement()).name();
+				count++;
+			}
+		}
+		node_attribute = arg0.classAttribute();
+
+		process(arg0);
+	}
+
+	@SuppressWarnings("rawtypes")
+	private void process(Instances arg0) throws Exception {
+		if (arg0.numInstances() == 0) {
+			classification = EMPTY_VALUE;
+			node_value = null;
+			isChecked = true;
 			return;
-		}
-
-		// Compute attribute with maximum information gain.
-		// double[] infoGains = new double[data.numAttributes()];
-
-		infoGains = new double[data.numAttributes()];
-		anotherCA = new String[data.numAttributes()];
-		int count = 0;
-
-		Enumeration attEnum = data.enumerateAttributes();
-		while (attEnum.hasMoreElements()) {
-			Attribute att = (Attribute) attEnum.nextElement();
-			anotherCA[count] = att.name();
-			infoGains[att.index()] = computeInfoGain(data, att);
-			count++;
-		}
-		attribute = data.attribute(Utils.maxIndex(infoGains));// attribute with Max IG value
-
-		// Make leaf if information gain is zero.
-		// Otherwise create successors.
-		if (Utils.eq(infoGains[attribute.index()], 0)) {
-			attribute = null;
-			distribution = new double[data.numClasses()];
-			Enumeration instEnum = data.enumerateInstances();
-			while (instEnum.hasMoreElements()) {
-				Instance inst = (Instance) instEnum.nextElement();
-				distribution[(int) inst.classValue()]++;
-			}
-			Utils.normalize(distribution); // convert it into 0.0 to 1.0 ratio
-			classValue = Utils.maxIndex(distribution);
-			classAttribute = data.classAttribute();
 		} else {
-			Instances[] splitData = splitData(data, attribute);
-			successors = new myID3[attribute.numValues()];
-			for (int j = 0; j < attribute.numValues(); j++) {
-				successors[j] = new myID3();
-				successors[j].makeTree(splitData[j]);
+			IG = new double[arg0.numAttributes()];
+
+			Enumeration e = arg0.enumerateAttributes();
+			while (e.hasMoreElements()) {
+				double information_gain = entropyCalculation(arg0);
+				Attribute att = (Attribute) e.nextElement();
+				Instances[] s = ntr(arg0, att);
+				int total_instances = arg0.numInstances();
+
+				for (int i = 0; i < att.numValues(); i++) {
+					int n = s[i].numInstances();
+					if (n > 0) {
+						information_gain -= ((double) n / (double) total_instances)
+								* entropyCalculation(s[i]);
+					}
+				}
+				/** Information Gain */
+				IG[att.index()] = information_gain;
 			}
-		}
-	}
 
-	/**
-	 * Classifies a given test instance using the decision tree.
-	 *
-	 * @param instance
-	 *            the instance to be classified
-	 * @return the classification
-	 * @throws NoSupportForMissingValuesException
-	 *             if instance has missing values
-	 */
-	public double classifyInstance(Instance instance)
-			throws NoSupportForMissingValuesException {
-
-		if (instance.hasMissingValue()) {
-			throw new NoSupportForMissingValuesException(
-					"Id3: no missing values, " + "please.");
-		}
-		if (attribute == null) {
-			return classValue;
-		} else {
-			System.out.println(attribute.name() + " = "
-					+ attribute.value((int) instance.value(attribute)));
-			return successors[(int) instance.value(attribute)]
-					.classifyInstance(instance);
-		}
-	}
-
-	/**
-	 * Computes class distribution for instance using decision tree.
-	 *
-	 * @param instance
-	 *            the instance for which distribution is to be computed
-	 * @return the class distribution for the given instance
-	 * @throws NoSupportForMissingValuesException
-	 *             if instance has missing values
-	 */
-	public double[] distributionForInstance(Instance instance)
-			throws NoSupportForMissingValuesException {
-
-		if (instance.hasMissingValue()) {
-			throw new NoSupportForMissingValuesException(
-					"Id3: no missing values, " + "please.");
-		}
-		if (attribute == null) {
-			return distribution;
-		} else {
-			return successors[(int) instance.value(attribute)]
-					.distributionForInstance(instance);
-		}
-	}
-
-	/**
-	 * Prints the decision tree using the private toString method from below.
-	 *
-	 * @return a textual description of the classifier
-	 */
-	public String toString() {
-
-		if ((distribution == null) && (successors == null)) {
-			return "Id3: No model built yet.";
-		}
-		return "Id3" + toString(0);
-	}
-
-	/**
-	 * Computes information gain for an attribute.
-	 *
-	 * @param data
-	 *            the data for which info gain is to be computed
-	 * @param att
-	 *            the attribute
-	 * @return the information gain for the given attribute and data
-	 * @throws Exception
-	 *             if computation fails
-	 */
-	private double computeInfoGain(Instances data, Attribute att)
-			throws Exception {
-
-		double infoGain = computeEntropy(data);
-		Instances[] splitData = splitData(data, att);
-		for (int j = 0; j < att.numValues(); j++) {
-			if (splitData[j].numInstances() > 0) {
-				infoGain -= ((double) splitData[j].numInstances() / (double) data
-						.numInstances()) * computeEntropy(splitData[j]);
+			int max_index = 0;
+			for (int i = 1; i < arg0.numAttributes(); i++) {
+				if (IG[i] > IG[max_index]) {
+					max_index = i;
+				}
 			}
-		}
-		return infoGain;
-	}
+			node_value = arg0.attribute(max_index);
 
-	/**
-	 * Computes the entropy of a dataset.
-	 * 
-	 * @param data
-	 *            the data for which entropy is to be computed
-	 * @return the entropy of the data's class distribution
-	 * @throws Exception
-	 *             if computation fails
-	 */
-	@SuppressWarnings("rawtypes")
-	private double computeEntropy(Instances data) throws Exception {
+			if (IG[node_value.index()] == 0) {
+				/** Leaf */
+				double[] num_of_elements = new double[arg0.numClasses()];
+				isChecked = true;
+				node_value = null;
 
-		double[] classCounts = new double[data.numClasses()];
-		Enumeration instEnum = data.enumerateInstances();
-		while (instEnum.hasMoreElements()) {
-			Instance inst = (Instance) instEnum.nextElement();
-			classCounts[(int) inst.classValue()]++;
-		}
-		double entropy = 0;
-		for (int j = 0; j < data.numClasses(); j++) {
-			if (classCounts[j] > 0) {
-				entropy -= classCounts[j] * Utils.log2(classCounts[j]);
-			}
-		}
-		entropy /= (double) data.numInstances();
-		return entropy + Utils.log2(data.numInstances());
-	}
+				Enumeration e2 = arg0.enumerateInstances();
+				while (e2.hasMoreElements()) {
+					Instance inst = (Instance) e2.nextElement();
+					int class_value = (int) inst.classValue();
+					num_of_elements[class_value]++;
+				}
+				Utils.normalize(num_of_elements);
 
-	/**
-	 * Splits a dataset according to the values of a nominal attribute.
-	 *
-	 * @param data
-	 *            the data which is to be split
-	 * @param att
-	 *            the attribute to be used for splitting
-	 * @return the sets of instances produced by the split
-	 */
-	@SuppressWarnings("rawtypes")
-	private Instances[] splitData(Instances data, Attribute att) {
+				int max_index2 = 0;
+				for (int i = 1; i < arg0.numClasses(); i++) {
+					if (num_of_elements[i] > num_of_elements[max_index]) {
+						max_index = i;
+					}
+				}
 
-		Instances[] splitData = new Instances[att.numValues()];
-		for (int j = 0; j < att.numValues(); j++) {
-			splitData[j] = new Instances(data, data.numInstances());
-		}
-		Enumeration instEnum = data.enumerateInstances();
-		while (instEnum.hasMoreElements()) {
-			Instance inst = (Instance) instEnum.nextElement();
-			splitData[(int) inst.value(att)].add(inst);
-		}
-		for (int i = 0; i < splitData.length; i++) {
-			splitData[i].compactify();
-		}
-		return splitData;
-	}
-
-	/**
-	 * Outputs a tree at a certain level.
-	 *
-	 * @param level
-	 *            the level at which the tree is to be printed
-	 * @return the tree as string at the given level
-	 */
-	private String toString(int level) {
-
-		StringBuffer text = new StringBuffer();
-
-		if (attribute == null) {
-			if (Instance.isMissingValue(classValue)) {
-				text.append(": null");
+				classification = num_of_elements[max_index2];
 			} else {
-				text.append(" Kelas : "
-						+ classAttribute.value((int) classValue) + " [LEAF]");
+				/** Recursive */
+				next_node = new myID3[node_value.numValues()];
+				Instances[] s = ntr(arg0, node_value);
+				for (int i = 0; i < node_value.numValues(); i++) {
+					next_node[i] = new myID3();
+					next_node[i].process(s[i]);
+				}
+			}
+
+		}
+	}
+
+	@SuppressWarnings("rawtypes")
+	private double entropyCalculation(Instances arg0) throws Exception {
+		double return_value = 0;
+
+		for (int i = 0; i < arg0.numClasses(); i++) {
+			int num_of_elements = 0;
+
+			Enumeration e = arg0.enumerateInstances();
+			while (e.hasMoreElements()) {
+				Instance inst = (Instance) e.nextElement();
+				if (inst.classValue() == i) {
+					num_of_elements++;
+				}
+			}
+
+			if (num_of_elements > 0) {
+				double v = (double) num_of_elements / arg0.numInstances();
+				return_value -= Utils.log2(v) * v;
+			}
+		}
+		return return_value;
+	}
+
+	@SuppressWarnings("rawtypes")
+	private Instances[] ntr(Instances arg0, Attribute a) {
+		Instances[] return_value = new Instances[a.numValues()];
+
+		for (int i = 0; i < a.numValues(); i++) {
+			List<Instance> l = new ArrayList<Instance>();
+
+			Enumeration e = arg0.enumerateInstances();
+			while (e.hasMoreElements()) {
+				Instance inst = (Instance) e.nextElement();
+				if ((int) inst.value(a) == i) {
+					l.add(inst);
+				}
+			}
+
+			return_value[i] = new Instances(arg0, l.size());
+			for (Instance inst : l) {
+				return_value[i].add(inst);
+			}
+		}
+
+		return return_value;
+	}
+
+	public double classifyInstance(Instance arg0) throws Exception {
+		double return_value = EMPTY_VALUE;
+		if (node_value == null)
+			return_value = classification;
+		else {
+			System.out.println(node_value.name() + " = "
+					+ node_value.value((int) arg0.value(node_value)));
+			return_value = next_node[(int) arg0.value(node_value)]
+					.classifyInstance(arg0);
+		}
+		return return_value;
+	}
+
+	public String toString() {
+		String results = "-- ID3 Model --";
+		if (!isChecked && (next_node == null))
+			return "Tree is Empty";
+		return results + recursive_print(0);
+	}
+
+	public String recursive_print(int level) {
+		String results = "";
+
+		if (node_value == null) {
+			if (Instance.isMissingValue(classification)) {
+				results = results + " null";
+			} else {
+				results = results + " Kelas : "
+						+ node_attribute.value((int) classification)
+						+ " [LEAF]";
 			}
 		} else {
 
-			for (int j = 0; j < attribute.numValues(); j++) {
-				text.append("\n");
+			for (int j = 0; j < node_value.numValues(); j++) {
+				results = results + "\n";
 				for (int i = 0; i <= level; i++) {
-					text.append("| \n");
+					results = results + "| \n";
 				}
-				for (int k = 0; k + 1 < anotherCA.length; k++) { // null prevention
-					text.append(" " + anotherCA[k]);
-					text.append(" (IG = " + infoGains[k] + ")\n");
+				for (int k = 0; k + 1 < attribute_title.length; k++) { // null
+																		// prevention
+					results = results + " " + attribute_title[k] + "";
+					results = results + " (IG = " + IG[k] + ")\n";
 				}
-				text.append(" " + attribute.name() + " = " + attribute.value(j)
-						+ " \n");
-				text.append(successors[j].toString(level + 1) + "\n");
+				results = results + " " + node_value.name() + " = "
+						+ node_value.value(j) + " \n";
+				results = results + next_node[j].recursive_print(level + 1)
+						+ "\n";
 			}
 		}
-		return text.toString();
+
+		return results;
 	}
 
 }
