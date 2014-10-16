@@ -23,22 +23,16 @@ public class myNN extends Classifier {
 	
 	private double learning_rate = 0.4; // default learning rate
 	private double momentum = 0.9; // default momentum
-	private int max_epoch = 500; // default maximum epoch
+	private int max_epoch = 100; // default maximum epoch
 	private int epoch = 0; // current epoch
-	private double min_error = 0.05; // default minimum error ratio
+	private double min_error = 0.05; // default minimum error ratio (MSE)
+	private double threshold = 0.5; // threshold value
 	private List<NeuronLayer> layers; // layers in myNN
 	
 	/**
-	 * mode = 1 -> min_error ( deltaMSE )
-	 * mode = 2 -> max_epoch
-	 * 
-	 */
-	private int mode = 1;
-	
-	/**
 	 * activation_type = 1 -> sigmoid
-	 * activation_type = 2 -> step
-	 * activation_type = 3 -> hardlin
+	 * activation_type = 2 -> hardlim / step
+	 * activation_type = 3 -> hardlims
 	 * 
 	 */
 	private int activation_type = 1;
@@ -74,6 +68,53 @@ public class myNN extends Classifier {
 		
 		switch(topology) {
 		case 1:
+			do {
+				Enumeration e = instances.enumerateInstances();
+				while (e.hasMoreElements()) {
+					Instance inst = (Instance) e.nextElement();
+					
+					// Initialize input per training case
+					double input[] = new double[layers.get(0).getN_node()];
+					for (int i = 0; i < inst.numAttributes() - 1; i++) {
+						input[i] = inst.value(i);
+					}
+					/**
+					 * Bias factor for Perceptron (weight > 0)
+					 * Reference: http://cse-wiki.unl.edu/wiki/index.php/Artificial_Neural_Networks#The_Multilayer_Perceptron
+					 */
+					input[inst.numAttributes() - 1] = -1;
+					layers.get(1).getNodes(0).setWeight(inst.numAttributes() - 1, 
+							Math.abs(layers.get(1).getNodes(0).getWeight(inst.numAttributes() - 1)));
+					layers.get(0).setInputValue(input);
+					
+					// Weight sum
+					double weight_sum = 0;
+					for (int i = 0; i <layers.get(0).getN_node(); i++) {
+						weight_sum += layers.get(1).getNodes(0).getWeight(i) * layers.get(0).getNodes(i).getOutput();
+					}
+					
+					// Activate
+					double output = activate(weight_sum);
+					
+					if (Math.abs(output - inst.value(inst.numAttributes() - 1)) > 1e-6) {
+						// Update weight
+						for (int i = 0; i < layers.get(0).getN_node() - 1; i++) {
+							double delta_weight = learning_rate;
+							delta_weight *= (inst.value(inst.numAttributes() - 1) - output);
+							delta_weight *= inst.value(i);
+							
+							double w = layers.get(1).getNodes(0).getWeight(i);
+							layers.get(1).getNodes(0).setWeight(i, w + delta_weight);
+						}	
+					}
+
+				}
+				
+				// re-calculate MSE
+				mse = calculateMSE(instances);
+				System.out.println(toString()); // output weight per epoch
+				epoch++; // next epoch
+			} while (epoch < max_epoch && mse > min_error);
 			break;
 		case 2:
 			break;
@@ -87,8 +128,7 @@ public class myNN extends Classifier {
 					
 					// Step 0: Initialize input per training case
 					// Step 1 : Forward Pass
-					double classification = classifyInstance(inst);
-					System.out.println(inst.value(0) + " " + inst.value(1) + " " + inst.value(2) + " - Result: " + classification);
+					classifyInstance(inst);
 
 					// Step 2: Back Propagation, Calculate Error Ratio
 					for (int j = 0; j < layers.get(layers.size() - 1).getN_node(); j++) {
@@ -132,13 +172,7 @@ public class myNN extends Classifier {
 								double w = layers.get(i).getNodes(j).getWeight(k);
 								layers.get(i).getNodes(j).setPrevious_weight(k, w);
 								layers.get(i).getNodes(j).setWeight(k, w + delta_weight + delta_momentum);
-								
-								/*
-								System.out.println(i + " " + j + " " + k + " " 
-								+ layers.get(i).getNodes(j).getPrevious_weight(k) + " " 
-								+ delta_weight + " "
-								+ (w + delta_weight + delta_momentum));
-								*/
+
 								
 								// Update bias
 								double b = layers.get(i).getNodes(j).getBias();
@@ -151,16 +185,7 @@ public class myNN extends Classifier {
 				}
 				
 				// re-calculate MSE
-				mse = 0;
-				e = instances.enumerateInstances();
-				while (e.hasMoreElements()) {
-					Instance inst = (Instance) e.nextElement();
-					classifyInstance(inst);
-					double val = inst.value(inst.numAttributes() - 1) - layers.get(layers.size() - 1).getNodes(0).getOutput();
-					val *= val; // quadratic
-					mse += val;
-				}
-				
+				mse = calculateMSE(instances);
 				System.out.println(toString()); // output weight per epoch
 				epoch++; // next epoch
 			} while (epoch < max_epoch && mse > min_error);
@@ -174,23 +199,47 @@ public class myNN extends Classifier {
 		for (int i = 0; i < instance.numAttributes() - 1; i++) {
 			input[i] = instance.value(i);
 		}
+		if (topology != 4) {
+			/**
+			 * Bias factor for Perceptron (weight > 0)
+			 * Reference: http://cse-wiki.unl.edu/wiki/index.php/Artificial_Neural_Networks#The_Multilayer_Perceptron
+			 */
+			input[instance.numAttributes() - 1] = -1;
+			layers.get(1).getNodes(0).setWeight(instance.numAttributes() - 1, 
+					Math.abs(layers.get(1).getNodes(0).getWeight(instance.numAttributes() - 1)));
+		}
 		layers.get(0).setInputValue(input);
 		
-		for (int i = 1; i < layers.size(); i++) {
-			for (int j = 0; j < layers.get(i).getN_node(); j++) {
-				double net = forwardPass(layers.get(i).getNodes(j), layers.get(i-1));
-				double output = activate(net);
-				layers.get(i).getNodes(j).setOutput(output); // update output per node
+		double result = 0;
+		
+		if (topology != 4) {
+			// Weight sum
+			double weight_sum = 0;
+			for (int i = 0; i <layers.get(0).getN_node(); i++) {
+				weight_sum += layers.get(1).getNodes(0).getWeight(i) * layers.get(0).getNodes(i).getOutput();
 			}
+			
+			// Activate
+			result = activate(weight_sum);
+		} else {
+			for (int i = 1; i < layers.size(); i++) {
+				for (int j = 0; j < layers.get(i).getN_node(); j++) {
+					double net = forwardPass(layers.get(i).getNodes(j), layers.get(i-1));
+					// Activate
+					double output = activate(net);
+					layers.get(i).getNodes(j).setOutput(output); // update output per node
+				}
+			}
+			
+			result = layers.get(layers.size() - 1).getNodes(0).getOutput();	
 		}
 		
-		double result = layers.get(layers.size() - 1).getNodes(0).getOutput();
-		if (result + 1e-9 > 0.5) return 1;
+		if (result + 1e-9 > threshold) return 1;
 		else return 0;
 	}
 	
 	public String toString() {
-		System.out.println("--Epoch " + epoch + "--");
+		System.out.println("--Result of Epoch " + epoch + "--");
 		
 		// Print weights here
 		for (int i = 1; i < layers.size(); i++) {
@@ -226,12 +275,33 @@ public class myNN extends Classifier {
 			if (v > 45) return 1;
 			if (v < -45) return 0;
 			return (1 / (1 + Math.exp(-v)));
-		case 2: // step
-			
-		case 3: // hardlin
-			
+		case 2: // hardlim
+			if (v < 0) return 0;
+			else return 1;
+		case 3: // hardlims
+			if (v < 0) return -1;
+			else return 1;
 		}
 		return 0;
+	}
+	
+	/** Calculate MSE 
+	 * @throws Exception
+	 **/
+	@SuppressWarnings("rawtypes")
+	private double calculateMSE(Instances instances) throws Exception {
+		double mse = 0;
+		Enumeration e = instances.enumerateInstances();
+		while (e.hasMoreElements()) {
+			Instance inst = (Instance) e.nextElement();
+			double classification = classifyInstance(inst);
+			System.out.println(inst.value(0) + " " + inst.value(1) + " " + inst.value(2) + " - Result: " + classification);
+			double val = inst.value(inst.numAttributes() - 1) - classification;
+			val *= val; // quadratic
+			mse += val;
+		}
+		mse /= 2;
+		return mse;
 	}
 
 	/** Getter & Setter for several parameters */
@@ -275,12 +345,12 @@ public class myNN extends Classifier {
 		this.min_error = min_error;
 	}
 
-	public int getMode() {
-		return mode;
+	public double getThreshold() {
+		return threshold;
 	}
 
-	public void setMode(int mode) {
-		this.mode = mode;
+	public void setThreshold(double threshold) {
+		this.threshold = threshold;
 	}
 
 	public int getActivation_type() {

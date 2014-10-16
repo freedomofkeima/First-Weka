@@ -283,29 +283,52 @@ public class Main {
 				data.setClassIndex(data.numAttributes() - 1);
 				
 				// create model
-				myNN model = new myNN(4);
+				myNN model;
 				
+				/**
+				 *  Define custom test layer here 
+				 *  Number of input nodes = number of features (without class index)
+				 *  Available parameters:
+				 *  - learning_rate
+				 *  - momentum
+				 *  - max_epoch
+				 *  - min_error (MSE)
+				 *  - threshold (if > threshold then "TRUE" else "FALSE", unary output)
+				 *  - activation_type
+				 * 
+				 **/
+				NeuronLayer i_layer;
+				NeuronLayer o_layer;
 				switch(input2) {
 				case "1":
-					break;
 				case "2":
-					
-					break;
 				case "3":
+					model = new myNN(Integer.parseInt(input2));
+					i_layer = new NeuronLayer(model.getLayerSize(), 2 + 1);
+					model.addLayer(i_layer);
+					o_layer = new NeuronLayer(model.getLayerSize(), 1);
+					model.addLayer(o_layer);
 					
+					// hardlim activation function
+					model.setActivation_type(2);
+					// learning rate should be small
+					model.setLearning_rate(0.1);
+					
+					model.buildClassifier(data);
 					break;
 				case "4":
-					/**
-					 *  Define custom test layer here 
-					 *  Number of input nodes = number of features (without class index)
-					 * 
-					 **/
-					NeuronLayer i_layer = new NeuronLayer(model.getLayerSize(), 2);
+					model = new myNN(4);
+					i_layer = new NeuronLayer(model.getLayerSize(), 2);
 					model.addLayer(i_layer);
 					NeuronLayer hidden_layer = new NeuronLayer(model.getLayerSize(), 2);
 					model.addLayer(hidden_layer);
-					NeuronLayer o_layer = new NeuronLayer(model.getLayerSize(), 1);
+					o_layer = new NeuronLayer(model.getLayerSize(), 1);
 					model.addLayer(o_layer);
+					
+					// sigmoid activation function
+					model.setActivation_type(1);
+					model.setThreshold(0.5);
+					
 					model.buildClassifier(data);
 					break;
 				default:
