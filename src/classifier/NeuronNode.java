@@ -18,13 +18,22 @@ public class NeuronNode {
 	private double error_ratio;
 	private double bias;
 	
+	/**
+	 * activation_type = 1 -> sigmoid (default)
+	 * activation_type = 2 -> hardlim / step
+	 * activation_type = 3 -> hardlims
+	 * activation_type = 4 -> purelin
+	 * 
+	 */
+	private int activation_type = 1;
+	
 	/** Input layer */
 	public NeuronNode() {
 		weight = null;
 		previous_weight = null;
 	}
 	
-	/** Randomize weight */
+	/** Randomize weight (Default) */
 	public NeuronNode(int prev_size) {
 		weight = new double[prev_size];
 		previous_weight = new double[prev_size];
@@ -88,6 +97,14 @@ public class NeuronNode {
 
 	public void setBias(double bias) {
 		this.bias = bias;
+	}
+
+	public int getActivation_type() {
+		return activation_type;
+	}
+
+	public void setActivation_type(int activation_type) {
+		this.activation_type = activation_type;
 	}
 	
 }

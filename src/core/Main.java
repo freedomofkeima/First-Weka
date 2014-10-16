@@ -283,14 +283,14 @@ public class Main {
 				data.setClassIndex(data.numAttributes() - 1);
 				
 				// create model
-				myNN model;
+				myNN model = null;
 				
 				/**
 				 *  Define custom test layer here 
 				 *  Number of input nodes = number of features (without class index)
 				 *  Available parameters:
 				 *  - learning_rate
-				 *  - momentum
+				 *  - momentum 
 				 *  - max_epoch
 				 *  - min_error (MSE)
 				 *  - threshold (if > threshold then "TRUE" else "FALSE", unary output)
@@ -304,15 +304,27 @@ public class Main {
 				case "2":
 				case "3":
 					model = new myNN(Integer.parseInt(input2));
-					i_layer = new NeuronLayer(model.getLayerSize(), 2 + 1);
+					i_layer = new NeuronLayer(model.getLayerSize(), 2 + 1); // 1 phantom
 					model.addLayer(i_layer);
 					o_layer = new NeuronLayer(model.getLayerSize(), 1);
 					model.addLayer(o_layer);
 					
+					/** 
+					 * Customize (Given) example
+					 * model.getLayers(1).getNodes(0).setWeight(0, 0.5);
+					 */
+					
 					// hardlim activation function
-					model.setActivation_type(2);
+					if (input2.equals("1")) {
+						model.getLayers(1).getNodes(0).setActivation_type(2);
+					}
+					else model.getLayers(1).getNodes(0).setActivation_type(4);
 					// learning rate should be small
 					model.setLearning_rate(0.1);
+					// maximum number of epoch
+					model.setMax_epoch(500);
+					// MSE configuration
+					model.setMin_error(0.05);
 					
 					model.buildClassifier(data);
 					break;
@@ -320,20 +332,39 @@ public class Main {
 					model = new myNN(4);
 					i_layer = new NeuronLayer(model.getLayerSize(), 2);
 					model.addLayer(i_layer);
-					NeuronLayer hidden_layer = new NeuronLayer(model.getLayerSize(), 2);
+					NeuronLayer hidden_layer = new NeuronLayer(model.getLayerSize(), 3);
 					model.addLayer(hidden_layer);
 					o_layer = new NeuronLayer(model.getLayerSize(), 1);
 					model.addLayer(o_layer);
-					
-					// sigmoid activation function
-					model.setActivation_type(1);
+
+					// sigmoid threshold ( 0..1 )
 					model.setThreshold(0.5);
+					// learning rate should be small
+					model.setLearning_rate(0.4);
+					// momentum configuration
+					model.setMomentum(0.9);
+					// maximum number of epoch
+					model.setMax_epoch(500);
+					// MSE configuration
+					model.setMin_error(0.05);
 					
 					model.buildClassifier(data);
+
 					break;
 				default:
 					System.out.println("Unrecognized input value!");
 				}
+				
+				// Classifying new instance
+				Instance test = new Instance(3);
+				test.setValue(data.attribute(0), 1);
+				test.setValue(data.attribute(1), 0);
+				System.out.println("\nTest data:");
+				System.out.println(test.value(0) + " " + test.value(1));
+				// Give access to dataset
+				test.setDataset(data);
+				System.out.println("Classifying result:");
+				System.out.println((int) model.classifyInstance(test));
 				
 				break;
 			case "999":
