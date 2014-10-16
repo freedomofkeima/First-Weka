@@ -38,6 +38,7 @@ public class TextWriter {
 		System.out.println("12 - Using Custom ID3 implementation");
 		System.out.println("13 - Praktikum 1 (myID3)");
 		System.out.println("14 - Praktikum 1 (ID3 Weka)");
+		System.out.println("15 - Praktikum 2 (myNN)");
 		System.out.println("999 - Exit");
 		System.out.print("Input: ");
 	}
@@ -72,6 +73,25 @@ public class TextWriter {
 			Attribute element = e.nextElement();
 			System.out.println(element);
 		}
+	}
+	
+	/**
+	 * Print NN Menu
+	 * Required Parameter:
+	 * - Initial Weight (random / given)
+	 * - Fungsi Aktivasi per Neuron
+	 * - Learning Rate
+	 * - Momentum
+	 * - Terminasi (deltaMSE, maxIteration)
+	 * 
+	 */
+	public static void printNNMenu() {
+		System.out.println("-- MyNN --");
+		System.out.println("1 - Single Perceptron");
+		System.out.println("2 - Batch Gradient Descent");
+		System.out.println("3 - Delta Rule");
+		System.out.println("4 - Back Propagation (MLP)");
+		System.out.print("Input: ");
 	}
 
 }

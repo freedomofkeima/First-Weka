@@ -18,4 +18,8 @@ public class Constants {
 	/** Praktikum 1 */
 	public static String ARFF_NOMINAL_NOISE_PATH = "./data/weather_with_noise.nominal.arff";
 	public static String ARFF_NOMINAL_COMPLEMENT_PATH = "./data/weather_complements.nominal.arff";
+	
+	/** Praktikum 2 */
+	public static String ARFF_AND_PATH = "./data/and.arff";
+	public static String ARFF_XOR_PATH = "./data/xor.arff";
 }

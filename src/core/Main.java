@@ -20,7 +20,9 @@ import weka.core.Instance;
 import weka.core.Instances;
 import classifier.ClassifyAlgorithm;
 import classifier.CustomAlgorithm;
+import classifier.NeuronLayer;
 import classifier.myID3;
+import classifier.myNN;
 
 /**
  * Main class for Weka
@@ -270,6 +272,46 @@ public class Main {
 				} else {
 					System.out.println("You need to load your data first!");
 				}
+				break;
+			case "15":
+				// choose NN Type
+				TextWriter.printNNMenu();
+				input2 = reader.readLine();
+				
+				// load data
+				data = LoadARFF.loadARFF(Constants.ARFF_AND_PATH);
+				data.setClassIndex(data.numAttributes() - 1);
+				
+				// create model
+				myNN model = new myNN(4);
+				
+				switch(input2) {
+				case "1":
+					break;
+				case "2":
+					
+					break;
+				case "3":
+					
+					break;
+				case "4":
+					/**
+					 *  Define custom test layer here 
+					 *  Number of input nodes = number of features (without class index)
+					 * 
+					 **/
+					NeuronLayer i_layer = new NeuronLayer(model.getLayerSize(), 2);
+					model.addLayer(i_layer);
+					NeuronLayer hidden_layer = new NeuronLayer(model.getLayerSize(), 2);
+					model.addLayer(hidden_layer);
+					NeuronLayer o_layer = new NeuronLayer(model.getLayerSize(), 1);
+					model.addLayer(o_layer);
+					model.buildClassifier(data);
+					break;
+				default:
+					System.out.println("Unrecognized input value!");
+				}
+				
 				break;
 			case "999":
 				System.out.println("Goodbye!");
