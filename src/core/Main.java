@@ -378,16 +378,10 @@ public class Main {
 				*/
 				break;
 			case "16":
-				// load data
-				data = LoadARFF.loadARFF(Constants.ARFF_DATASET2_PATH);
-				data.setClassIndex(data.numAttributes() - 1);
 				
 				
 				break;
 			case "17":
-				// load data
-				data = LoadARFF.loadARFF(Constants.ARFF_DATASET2_PATH);
-				data.setClassIndex(data.numAttributes() - 1);
 				
 				
 				break;
