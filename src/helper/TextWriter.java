@@ -39,6 +39,8 @@ public class TextWriter {
 		System.out.println("13 - Praktikum 1 (myID3)");
 		System.out.println("14 - Praktikum 1 (ID3 Weka)");
 		System.out.println("15 - Praktikum 2 (myNN)");
+		System.out.println("16 - Clustering with Hierarchical [Dataset Tubes]");
+		System.out.println("17 - Clustering with Partitional [Dataset Tubes]");
 		System.out.println("999 - Exit");
 		System.out.print("Input: ");
 	}

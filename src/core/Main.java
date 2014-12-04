@@ -279,7 +279,7 @@ public class Main {
 				input2 = reader.readLine();
 				
 				// load data
-				data = LoadARFF.loadARFF(Constants.ARFF_AND_PATH);
+				data = LoadARFF.loadARFF(Constants.ARFF_DATASET2_PATH);
 				data.setClassIndex(data.numAttributes() - 1);
 				
 				// create model
@@ -307,6 +307,9 @@ public class Main {
 					i_layer = new NeuronLayer(model.getLayerSize(), 2 + 1); // 1 phantom
 					model.addLayer(i_layer);
 					o_layer = new NeuronLayer(model.getLayerSize(), 1);
+					// o_layer.getNodes(0).setWeight(0, 0.5);
+					// o_layer.getNodes(0).setWeight(1, 0.5);
+					// o_layer.getNodes(0).setWeight(2, 0.5);
 					model.addLayer(o_layer);
 					
 					/** 
@@ -314,35 +317,35 @@ public class Main {
 					 * model.getLayers(1).getNodes(0).setWeight(0, 0.5);
 					 */
 					
-					// hardlim activation function
+					// hardlims activation function
 					if (input2.equals("1")) {
-						model.getLayers(1).getNodes(0).setActivation_type(2);
+						model.getLayers(1).getNodes(0).setActivation_type(3);
 					}
 					else model.getLayers(1).getNodes(0).setActivation_type(4);
 					// learning rate should be small
-					model.setLearning_rate(0.1);
+					model.setLearning_rate(0.4);
 					// maximum number of epoch
 					model.setMax_epoch(500);
 					// MSE configuration
-					model.setMin_error(0.05);
+					model.setMin_error(0.001);
 					
 					model.buildClassifier(data);
 					break;
 				case "4":
 					model = new myNN(4);
-					i_layer = new NeuronLayer(model.getLayerSize(), 2);
+					i_layer = new NeuronLayer(model.getLayerSize(), data.numAttributes() - 1);
 					model.addLayer(i_layer);
-					NeuronLayer hidden_layer = new NeuronLayer(model.getLayerSize(), 3);
+					NeuronLayer hidden_layer = new NeuronLayer(model.getLayerSize(), 8);
 					model.addLayer(hidden_layer);
 					o_layer = new NeuronLayer(model.getLayerSize(), 1);
 					model.addLayer(o_layer);
 
 					// sigmoid threshold ( 0..1 )
-					model.setThreshold(0.5);
+					// model.setThreshold(0.5); // for binary classification
 					// learning rate should be small
-					model.setLearning_rate(0.4);
+					model.setLearning_rate(0.1);
 					// momentum configuration
-					model.setMomentum(0.9);
+					model.setMomentum(0.7);
 					// maximum number of epoch
 					model.setMax_epoch(500);
 					// MSE configuration
@@ -355,6 +358,13 @@ public class Main {
 					System.out.println("Unrecognized input value!");
 				}
 				
+				Evaluation eval = new Evaluation(data);
+				eval.evaluateModel(model, data);
+				System.out.println(eval.toSummaryString(
+						"\nResults\n======\n", false));
+				
+				
+				/*
 				// Classifying new instance
 				Instance test = new Instance(3);
 				test.setValue(data.attribute(0), 1);
@@ -365,6 +375,20 @@ public class Main {
 				test.setDataset(data);
 				System.out.println("Classifying result:");
 				System.out.println((int) model.classifyInstance(test));
+				*/
+				break;
+			case "16":
+				// load data
+				data = LoadARFF.loadARFF(Constants.ARFF_DATASET2_PATH);
+				data.setClassIndex(data.numAttributes() - 1);
+				
+				
+				break;
+			case "17":
+				// load data
+				data = LoadARFF.loadARFF(Constants.ARFF_DATASET2_PATH);
+				data.setClassIndex(data.numAttributes() - 1);
+				
 				
 				break;
 			case "999":

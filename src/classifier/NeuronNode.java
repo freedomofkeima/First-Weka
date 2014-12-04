@@ -107,4 +107,5 @@ public class NeuronNode {
 		this.activation_type = activation_type;
 	}
 	
+	
 }

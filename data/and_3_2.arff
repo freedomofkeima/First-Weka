@@ -1,0 +1,16 @@
+@relation and
+
+@attribute x1 {0, 1}
+@attribute x2 {0, 1}
+@attribute x3 {0, 1}
+@attribute class {-1, 1}
+
+@data
+1,1,1,1
+1,1,0,-1
+1,0,1,-1
+1,0,0,-1
+0,1,1,-1
+0,1,0,-1
+0,0,1,-1
+0,0,0,-1

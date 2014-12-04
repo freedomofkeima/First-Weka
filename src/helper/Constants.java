@@ -22,4 +22,10 @@ public class Constants {
 	/** Praktikum 2 */
 	public static String ARFF_AND_PATH = "./data/and.arff";
 	public static String ARFF_XOR_PATH = "./data/xor.arff";
+	public static String ARFF_AND_1_PATH = "./data/and_3_1.arff";
+	public static String ARFF_AND_2_PATH = ".data/and_3_2.arff";
+	
+	/** Tugas Besar */
+	public static String ARFF_DATASET_PATH = "./data/dataset.arff";
+	public static String ARFF_DATASET2_PATH = "./data/dataset2.arff";
 }
