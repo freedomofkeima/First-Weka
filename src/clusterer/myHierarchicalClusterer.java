@@ -275,6 +275,7 @@ public class myHierarchicalClusterer implements Clusterer, CapabilitiesHandler {
 		
 		// Search for the k-th Cluster of Instances.get(idx)
 		// Return k
+		// TODO (@hotarufk)
 		
 		/** DUMMY */
 		return 0;
