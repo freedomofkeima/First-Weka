@@ -34,16 +34,24 @@ public class myHierarchicalClusterer implements Clusterer, CapabilitiesHandler {
 	private int current_n_cluster; // current number of cluster -> end when this
 									// value == 1
 
-	class Cluster {
+	class Cluster implements Cloneable {
 		Cluster left;
 		Cluster right;
-		double left_distance;
-		double right_distance;
 		ArrayList<Instance> elements;
 		int height;
 
 		Cluster() {
 			elements = new ArrayList<Instance>();
+		}
+
+		Cluster getClone() {
+			try {
+				// call clone
+				return (Cluster) super.clone();
+			} catch (CloneNotSupportedException e) {
+				System.out.println(" Cloning not allowed. ");
+				return this;
+			}
 		}
 
 		Cluster get_left() {
@@ -54,18 +62,20 @@ public class myHierarchicalClusterer implements Clusterer, CapabilitiesHandler {
 			return right;
 		}
 
-		void set_left(Cluster left, double distance) {
+		void set_left(Cluster left) {
 			this.left = left;
-			left_distance = distance;
 		}
 
-		void set_right(Cluster right, double distance) {
+		void set_right(Cluster right) {
 			this.right = right;
-			right_distance = distance;
 		}
 
 		Instance get_element(int idx) {
 			return elements.get(idx);
+		}
+
+		int get_element_size() {
+			return elements.size();
 		}
 
 		void add_element(Instance i) {
@@ -80,96 +90,192 @@ public class myHierarchicalClusterer implements Clusterer, CapabilitiesHandler {
 			elements = i;
 		}
 
-		void set_distance(double d1, double d2) {
-			left_distance = d1;
-			right_distance = d2;
-		}
 		int get_height() {
 			return height;
 		}
+
 		void set_height(int height) {
 			this.height = height;
 		}
 	}
 
-	private Cluster[] clusters;
+	private ArrayList<Cluster> clusters;
 
 	public myHierarchicalClusterer(int link_type) {
 		this.link_type = link_type;
 	}
 
-	@SuppressWarnings("unchecked")
 	public void buildClusterer(Instances data) throws Exception {
 		instances = data;
 		if (instances.numInstances() == 0)
 			return;
 		current_n_cluster = instances.numInstances();
-		
-		if (n_cluster > current_n_cluster) n_cluster = current_n_cluster;
-		
-		clusters = new Cluster[current_n_cluster];
+
+		if (n_cluster > current_n_cluster)
+			n_cluster = current_n_cluster;
+
+		clusters = new ArrayList<Cluster>();
 
 		/** Initial: Each instances -> 1 cluster */
 		@SuppressWarnings("rawtypes")
 		Enumeration e = instances.enumerateInstances();
-		int idx = 0;
 		while (e.hasMoreElements()) {
 			Instance inst = (Instance) e.nextElement();
 			Cluster entity = new Cluster();
 			entity.add_element(inst); // add element
 			entity.set_height(0); // leaf, default height
-			clusters[idx] = entity;
-			idx++; // iterate to next element
+			clusters.add(entity);
 		}
-		
-		/** Process: Link each cluster until single cluster
-		 *  Notice: Just do dirty hack, copy all elements from leaf to current cluster node
+
+		/**
+		 * Process: Link each cluster until single cluster Notice: Just do dirty
+		 * hack, copy all elements from leaf to current cluster node
 		 */
 		while (current_n_cluster != 1) {
-			
+			/** Compute distance between two clusters */
+			// TODO (@freedomofkeima): Optimize with DP / Pre-compute
+
+			double[][] distance = new double[current_n_cluster][current_n_cluster];
+			// Initialize
+			for (int i = 0; i < current_n_cluster; i++)
+				for (int j = 0; j < current_n_cluster; j++)
+					distance[i][j] = -1;
+			for (int i = 0; i < current_n_cluster; i++)
+				for (int j = 0; j < current_n_cluster; j++)
+					if (i != j && distance[j][i] == -1) {
+						distance[i][j] = getDistance(clusters.get(i),
+								clusters.get(j));
+						distance[j][i] = distance[i][j]; // symmetric
+					}
+			// Search for minimum / maximum from all pairs
+			int idx_one = 0, idx_two = 1; // initialize
+			double dist = distance[idx_one][idx_two];
+			for (int i = 0; i < current_n_cluster; i++)
+				for (int j = 0; j < current_n_cluster; j++) {
+					if (i != j) {
+						switch (link_type) {
+						case 1:
+							if (dist > distance[i][j]) { // symmetry,
+															// interchangeable
+								idx_one = i;
+								idx_two = j;
+							}
+							break;
+						case 2:
+							if (dist < distance[i][j]) { // symmetry,
+															// interchangeable
+								idx_one = i;
+								idx_two = j;
+							}
+							break;
+						}
+					}
+				}
+			// Link
+			Cluster new_cluster = linkCluster(clusters.get(idx_one),
+					clusters.get(idx_two));
+			clusters.set(idx_one, new_cluster);
+			clusters.remove(idx_two);
+			current_n_cluster--;
 		}
-		
-		
+
 		/**
 		 * Finalize: Equalize current_n_cluster to n_cluster
 		 */
-		
-		
-	}
-	
-	/** Search for two clusters to be merged */
-	private void linkCluster() {
-		/** Compute distance between two clusters */
-		// TODO: Optimize with DP / Pre-compute
-		
-		/** Merge two clusters with minimum distance (single link) or maximum distance (complete link) */
+		System.out.println(clusters.get(0).get_element_size());
+		System.out.println(clusters.get(0).get_height());
+		System.out.println("Left: " + clusters.get(0).get_left().get_element_size());
+		System.out.println(clusters.get(0).get_left().get_height());
+		System.out.println("Right: " + clusters.get(0).get_right().get_element_size());
+		System.out.println(clusters.get(0).get_right().get_height());
+		// TODO (@hotarufk)
 		
 	}
-	
+
+	/** Merge two clusters */
+	private Cluster linkCluster(Cluster c1, Cluster c2) {
+		/**
+		 * Merge two clusters with minimum distance (single link) or maximum
+		 * distance (complete link)
+		 */
+		Cluster result = new Cluster();
+		result.set_height(Math.max(c1.get_height(), c2.get_height()) + 1);
+
+		// Set left & right
+		result.set_left(c1.getClone());
+		result.set_right(c2.getClone());
+
+		for (int i = 0; i < c1.get_element_size(); i++)
+			result.add_element(c1.get_element(i));
+		for (int i = 0; i < c2.get_element_size(); i++)
+			result.add_element(c2.get_element(i));
+
+		return result;
+	}
+
 	/**
 	 * Use EuclideanDistance to get distance between two clusters
 	 */
 	private double getDistance(Cluster c1, Cluster c2) {
-		switch(link_type) {
-		case 1: // single link
-			break;
-		case 2: // complete link
-			break;
+		double global_dist = 0;
+		for (int i = 0; i < c1.get_element_size(); i++)
+			for (int j = 0; j < c2.get_element_size(); j++) {
+				global_dist += getDistanceInstance(c1.get_element(i), c2.get_element(j));
+			}
+
+		return global_dist;
+	}
+	
+	private double getDistanceInstance(Instance i1, Instance i2) {
+		double temp_dist = 0;
+		for (int k = 0; k < instances.numAttributes() - 1; k++) {
+			if (instances.attribute(k).isNominal()) {
+				if (Math.abs(i1.value(k) - i2.value(k)) > 0.01)
+					temp_dist = temp_dist + 1;
+			}
+			if (instances.attribute(k).isNumeric()) {
+				// TODO @hotarufk: Check bound lower..upper for each attribute (not hardcoded)
+				double lower_bound = 64;
+				double upper_bound = 96;
+				
+				if (Math.abs(lower_bound - upper_bound) > 0.000001) {
+					double diff = (i1.value(k) - i2.value(k))
+							/ (upper_bound - lower_bound);
+					temp_dist = temp_dist + diff * diff;
+				}
+			}
 		}
-		return 0;
+		return Math.sqrt(temp_dist);
 	}
 
+	@SuppressWarnings("rawtypes")
 	public int clusterInstance(Instance instance) throws Exception {
 		if (instances.numInstances() == 0) {
 			return 0;
 		}
-		/** 
-		 * Search for nearest instance (model) which represents current `instance`
-		 * Return cluster index of the instance (model)
+		/**
+		 * Search for nearest instance (model) which represents current
+		 * `instance` Return cluster index of the instance (model)
 		 */
-		for (int i = 0; i < instances.numInstances(); i++) {
-			
+		int idx = -1, counter = 0;
+		double dist = 1000000000;
+		Enumeration e = instances.enumerateInstances();
+		while (e.hasMoreElements()) {
+			Instance inst = (Instance) e.nextElement();
+			double distance = getDistanceInstance(inst, instance);
+			if (idx == -1) {
+				idx = counter;
+				dist = distance;
+			} else if (dist > distance) {
+				idx = counter;
+				dist = distance;
+			}
+			counter++;
 		}
+		
+		// Search for the k-th Cluster of Instances.get(idx)
+		// Return k
+		
 		/** DUMMY */
 		return 0;
 	}
