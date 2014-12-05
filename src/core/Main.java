@@ -15,6 +15,8 @@ import loader.LoadCSV;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.classifiers.trees.Id3;
+import weka.clusterers.ClusterEvaluation;
+import weka.clusterers.Clusterer;
 import weka.core.Attribute;
 import weka.core.Instance;
 import weka.core.Instances;
@@ -23,6 +25,8 @@ import classifier.CustomAlgorithm;
 import classifier.NeuronLayer;
 import classifier.myID3;
 import classifier.myNN;
+import clusterer.myHierarchicalClusterer;
+import clusterer.myPartitionalClusterer;
 
 /**
  * Main class for Weka
@@ -378,12 +382,22 @@ public class Main {
 				*/
 				break;
 			case "16":
-				
-				
+				if (data != null) {
+					Clusterer clusterer = new myHierarchicalClusterer(1); // single_link
+					clusterer.buildClusterer(data);
+					
+					/**
+					 * Notice: clusterInstance() to choose the cluster index
+					 */
+					ClusterEvaluation cluster_eval = new ClusterEvaluation();
+					cluster_eval.setClusterer(clusterer);
+					cluster_eval.evaluateClusterer(data);
+					System.out.println("\nResults\n======\n");
+					System.out.println(cluster_eval.clusterResultsToString());
+				}
 				break;
 			case "17":
-				
-				
+
 				break;
 			case "999":
 				System.out.println("Goodbye!");

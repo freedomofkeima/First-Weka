@@ -1,5 +1,8 @@
 package clusterer;
 
+import java.util.ArrayList;
+import java.util.Enumeration;
+
 import weka.clusterers.ClusterEvaluation;
 import weka.clusterers.Clusterer;
 import weka.core.Capabilities;
@@ -20,39 +23,170 @@ import weka.core.Utils;
  */
 
 public class myHierarchicalClusterer implements Clusterer, CapabilitiesHandler {
-	
+
 	/** List of Attributes */
-	private int nCluster = 2; // number of cluster
+	private int n_cluster = 2; // number of cluster
+	/**
+	 * SINGLE = 1 COMPLETE = 2
+	 */
+	private final int link_type;
+	private Instances instances; // instances
+	private int current_n_cluster; // current number of cluster -> end when this
+									// value == 1
 
+	class Cluster {
+		Cluster left;
+		Cluster right;
+		double left_distance;
+		double right_distance;
+		ArrayList<Instance> elements;
+		int height;
+
+		Cluster() {
+			elements = new ArrayList<Instance>();
+		}
+
+		Cluster get_left() {
+			return left;
+		}
+
+		Cluster get_right() {
+			return right;
+		}
+
+		void set_left(Cluster left, double distance) {
+			this.left = left;
+			left_distance = distance;
+		}
+
+		void set_right(Cluster right, double distance) {
+			this.right = right;
+			right_distance = distance;
+		}
+
+		Instance get_element(int idx) {
+			return elements.get(idx);
+		}
+
+		void add_element(Instance i) {
+			elements.add(i);
+		}
+
+		void set_element(Instance i, int idx) {
+			elements.set(idx, i);
+		}
+
+		void set_elements(ArrayList<Instance> i) {
+			elements = i;
+		}
+
+		void set_distance(double d1, double d2) {
+			left_distance = d1;
+			right_distance = d2;
+		}
+		int get_height() {
+			return height;
+		}
+		void set_height(int height) {
+			this.height = height;
+		}
+	}
+
+	private Cluster[] clusters;
+
+	public myHierarchicalClusterer(int link_type) {
+		this.link_type = link_type;
+	}
+
+	@SuppressWarnings("unchecked")
 	public void buildClusterer(Instances data) throws Exception {
+		instances = data;
+		if (instances.numInstances() == 0)
+			return;
+		current_n_cluster = instances.numInstances();
+		
+		if (n_cluster > current_n_cluster) n_cluster = current_n_cluster;
+		
+		clusters = new Cluster[current_n_cluster];
 
+		/** Initial: Each instances -> 1 cluster */
+		@SuppressWarnings("rawtypes")
+		Enumeration e = instances.enumerateInstances();
+		int idx = 0;
+		while (e.hasMoreElements()) {
+			Instance inst = (Instance) e.nextElement();
+			Cluster entity = new Cluster();
+			entity.add_element(inst); // add element
+			entity.set_height(0); // leaf, default height
+			clusters[idx] = entity;
+			idx++; // iterate to next element
+		}
+		
+		/** Process: Link each cluster until single cluster
+		 *  Notice: Just do dirty hack, copy all elements from leaf to current cluster node
+		 */
+		while (current_n_cluster != 1) {
+			
+		}
+		
+		
+		/**
+		 * Finalize: Equalize current_n_cluster to n_cluster
+		 */
+		
+		
+	}
+	
+	/** Search for two clusters to be merged */
+	private void linkCluster() {
+		/** Compute distance between two clusters */
+		// TODO: Optimize with DP / Pre-compute
+		
+		/** Merge two clusters with minimum distance (single link) or maximum distance (complete link) */
+		
+	}
+	
+	/**
+	 * Use EuclideanDistance to get distance between two clusters
+	 */
+	private double getDistance(Cluster c1, Cluster c2) {
+		switch(link_type) {
+		case 1: // single link
+			break;
+		case 2: // complete link
+			break;
+		}
+		return 0;
 	}
 
 	public int clusterInstance(Instance instance) throws Exception {
-
-		double[] dist = distributionForInstance(instance);
-
-		if (dist == null) {
-			throw new Exception("Null distribution predicted");
+		if (instances.numInstances() == 0) {
+			return 0;
 		}
-
-		if (Utils.sum(dist) <= 0) {
-			throw new Exception("Unable to cluster instance");
+		/** 
+		 * Search for nearest instance (model) which represents current `instance`
+		 * Return cluster index of the instance (model)
+		 */
+		for (int i = 0; i < instances.numInstances(); i++) {
+			
 		}
-		return Utils.maxIndex(dist);
+		/** DUMMY */
+		return 0;
 	}
 
 	public double[] distributionForInstance(Instance instance) throws Exception {
-
-		double[] d = new double[numberOfClusters()];
-
-		d[clusterInstance(instance)] = 1.0;
-
-		return d;
+		if (numberOfClusters() == 0) {
+			double[] p = new double[1];
+			p[0] = 1;
+			return p;
+		}
+		double[] p = new double[numberOfClusters()];
+		p[clusterInstance(instance)] = 1.0;
+		return p;
 	}
 
 	public int numberOfClusters() throws Exception {
-		return 0;
+		return n_cluster;
 	}
 
 	public static Clusterer forName(String clustererName, String[] options)
@@ -112,12 +246,12 @@ public class myHierarchicalClusterer implements Clusterer, CapabilitiesHandler {
 		return result;
 	}
 
-	public int getnCluster() {
-		return nCluster;
+	public int getn_cluster() {
+		return n_cluster;
 	}
 
-	public void setnCluster(int nCluster) {
-		this.nCluster = nCluster;
+	public void setnCluster(int n_cluster) {
+		this.n_cluster = n_cluster;
 	}
 
 }
