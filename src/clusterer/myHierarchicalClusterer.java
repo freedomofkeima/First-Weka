@@ -5,6 +5,7 @@ import java.util.Enumeration;
 
 import weka.clusterers.ClusterEvaluation;
 import weka.clusterers.Clusterer;
+import weka.core.Attribute;
 import weka.core.Capabilities;
 import weka.core.Capabilities.Capability;
 import weka.core.CapabilitiesHandler;
@@ -13,6 +14,8 @@ import weka.core.Instances;
 import weka.core.RevisionUtils;
 import weka.core.SerializedObject;
 import weka.core.Utils;
+import weka.filters.Filter;
+import weka.filters.unsupervised.instance.RemoveFrequentValues;
 
 /**
  * Custom Hierarchical Clustering Implementation (implements Clusterer)
@@ -40,6 +43,7 @@ public class myHierarchicalClusterer implements Clusterer, CapabilitiesHandler {
 		double left_distance;
 		double right_distance;
 		ArrayList<Instance> elements;
+		Instance core;
 		int height;
 
 		Cluster() {
@@ -90,6 +94,40 @@ public class myHierarchicalClusterer implements Clusterer, CapabilitiesHandler {
 		void set_height(int height) {
 			this.height = height;
 		}
+		
+		//emon
+		void set_core(){
+			int[] count = new int[elements.get(0).numAttributes()];
+			for(int i=0;i<elements.size();i++){
+				for (int j =0;j<elements.get(i).numAttributes();j++){
+					if(elements.get(i).attribute(j).isNumeric()){
+						
+					}else{//averaging
+						count[j]+= elements.get(i).value(j);
+					}
+					if(i == elements.size()-1){
+						if(elements.get(i).attribute(j).isNumeric())
+							core.setValue(j, count[j]/elements.size());
+						//else //ini yang datanya musti count
+					}
+				}
+			}
+		//core = new Instance(elements.get(0));
+			
+		}
+		int getDistance(Instance i){
+			int count = 0;
+			for(int j=0;j<core.numAttributes();j++){
+				if(core.attribute(j).isNumeric()){
+					
+				}else{ //sama atau kagak
+					//if (i.value(j) core.value(j))
+						//count++;
+				}
+			}
+		return count;
+		}
+		
 	}
 
 	private Cluster[] clusters;
