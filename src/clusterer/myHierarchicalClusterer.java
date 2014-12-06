@@ -127,7 +127,32 @@ public class myHierarchicalClusterer implements Clusterer, CapabilitiesHandler {
 		System.out.println("Right: " + clusters.get(0).get_right().get_element_size());
 		System.out.println(clusters.get(0).get_right().get_height());
 		// TODO (@hotarufk)
-		
+		if(current_n_cluster == n_cluster){
+			
+		}else{
+			int count =0;
+			ArrayList <Cluster> hasil = new ArrayList<Cluster>();
+			Cluster root = clusters.get(0);
+			//bandingin left atau right yg lebih besar
+			while(count<n_cluster){
+				if(root.get_left().get_height() >= root.get_right().get_height()){
+					hasil.add(root.get_left());
+					count++;
+					if (n_cluster-count == 1){ //sisa 1 lagi
+						hasil.add(root.get_right());
+					}else
+						root = root.get_right();
+				}else{
+					hasil.add(root.get_right());
+					count++;
+					if (n_cluster-count == 1){
+						hasil.add(root.get_left());	
+					}else
+						root = root.get_left();
+				}
+			}
+			clusters = hasil;
+		}
 	}
 
 	/** Merge two clusters */
