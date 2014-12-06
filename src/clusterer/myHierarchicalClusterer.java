@@ -173,9 +173,19 @@ public class myHierarchicalClusterer implements Clusterer, CapabilitiesHandler {
 			}
 			if (instances.attribute(k).isNumeric()) {
 				// TODO @hotarufk: Check bound lower..upper for each attribute (not hardcoded)
-				double lower_bound = 64;
-				double upper_bound = 96;
-				
+				// Cari nilai ekstrim
+				double upper_bound = 0;
+				double lower_bound = 999;
+					
+				for(int l = 0; l < instances.numInstances(); l++) {
+					if(instances.instance(l).value(k) < lower_bound) {
+						lower_bound = instances.instance(l).value(k);
+					}
+					if(instances.instance(l).value(k) > upper_bound) {
+						upper_bound = instances.instance(l).value(k);
+					}	
+				}
+			
 				if (Math.abs(lower_bound - upper_bound) > 0.000001) {
 					double diff = (i1.value(k) - i2.value(k))
 							/ (upper_bound - lower_bound);
@@ -210,13 +220,26 @@ public class myHierarchicalClusterer implements Clusterer, CapabilitiesHandler {
 			}
 			counter++;
 		}
+		boolean found = false;
+		int numCluster=999;
+		InstanceComparator IC = new InstanceComparator();
+		for(int i=0;i< numberOfClusters();i++){
+			for(int j=0;j<clusters.get(i).get_element_size();j++){
+				if(IC.compare(instance, clusters.get(i).get_element(j))== 0){
+					numCluster = i;
+					found = true;
+					break;
+				}
+			}
+			if(found) break;
+		}
 		
 		// Search for the k-th Cluster of Instances.get(idx)
 		// Return k
 		// TODO (@hotarufk)
 		
 		/** DUMMY */
-		return 0;
+		return numCluster;
 	}
 
 	public double[] distributionForInstance(Instance instance) throws Exception {
