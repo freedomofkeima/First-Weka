@@ -25,7 +25,8 @@ public class LoadARFF {
 	    if (path.startsWith("http:") || path.startsWith("ftp:"))
 	      loader.setURL(path);
 	    else
-	      loader.setSource(new File(path));
+	    // loader.setSource(new File(path));
+	    	 loader.setSource(new File("D:/Andri/Kuliah/ML/Weka/data/weather.numeric.arff"));
 	    data = loader.getDataSet();
 	    
 	    System.out.println("\nHeader of dataset:\n");

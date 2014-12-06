@@ -10,6 +10,7 @@ import weka.core.Capabilities;
 import weka.core.Capabilities.Capability;
 import weka.core.CapabilitiesHandler;
 import weka.core.Instance;
+import weka.core.InstanceComparator;
 import weka.core.Instances;
 import weka.core.RevisionUtils;
 import weka.core.SerializedObject;
@@ -35,124 +36,7 @@ public class myHierarchicalClusterer implements Clusterer, CapabilitiesHandler {
 	private final int link_type;
 	private Instances instances; // instances
 	private int current_n_cluster; // current number of cluster -> end when this
-									// value == 1
-
-	class Cluster implements Cloneable {
-		Cluster left;
-		Cluster right;
-		ArrayList<Instance> elements;
-		ArrayList<Instance> lastelements;//simpen instances sebelum nya , kalo yg baru sama dengan yg lama algo selesai
-		Instance core;
-		double epsilon=0.01;//
-		int height;
-
-		Cluster() {
-			elements = new ArrayList<Instance>();
-			lastelements = new ArrayList<Instance>();
-		}
-
-		Cluster getClone() {
-			try {
-				// call clone
-				return (Cluster) super.clone();
-			} catch (CloneNotSupportedException e) {
-				System.out.println(" Cloning not allowed. ");
-				return this;
-			}
-		}
-
-		Cluster get_left() {
-			return left;
-		}
-
-		Cluster get_right() {
-			return right;
-		}
-
-		void set_left(Cluster left) {
-			this.left = left;
-		}
-
-		void set_right(Cluster right) {
-			this.right = right;
-		}
-
-		Instance get_element(int idx) {
-			return elements.get(idx);
-		}
-
-		int get_element_size() {
-			return elements.size();
-		}
-
-		void add_element(Instance i) {
-			elements.add(i);
-		}
-
-		void set_element(Instance i, int idx) {
-			elements.set(idx, i);
-		}
-
-		void set_elements(ArrayList<Instance> i) {
-			elements = i;
-		}
-
-		int get_height() {
-			return height;
-		}
-
-		void set_height(int height) {
-			this.height = height;
-		}
-		
-		//emon
-		void set_core(){
-			int[] count = new int[elements.get(0).numAttributes()];
-			ArrayList<ArrayList<Integer>> group = new ArrayList<ArrayList<Integer>>(elements.get(0).numAttributes());
-			lastelements.clear();
-			for(int i=0;i<elements.size();i++){
-				lastelements.add(elements.get(i));
-				for (int j =0;j<elements.get(i).numAttributes();j++){
-					if(!elements.get(i).attribute(j).isNumeric()){
-						
-					}else{//averaging
-						count[j]+= elements.get(i).value(j);
-					}
-					if(i == elements.size()-1){
-						if(elements.get(i).attribute(j).isNumeric())
-							core.setValue(j, count[j]/elements.size());
-						//else //ini yang datanya musti count
-					}
-				}
-			}
-		}
-		
-		int getDistance(Instance i){
-			int count = 0;
-			for(int j=0;j<core.numAttributes();j++){
-				if(core.attribute(j).isNumeric()){
-					if(Math.abs(i.value(j) - core.value(j)) < epsilon)//kalo lebih besar dari batas toleransi, jaraknya naik
-						count++;
-				}else{ //sama atau kagak
-					if (i.stringValue(j).equals(core.stringValue(j)))
-						count++;
-				}
-			}
-		return count;
-		}
-		
-		boolean isConvergen(){
-			boolean convergen = false;
-				if(elements.size()!=lastelements.size())
-					convergen = false;
-				else{//bandingin attribute2 di dalemnya
-					
-				}
-			return convergen;
-		}
-		
-	}
-
+									// value == 
 	private ArrayList<Cluster> clusters;
 
 	public myHierarchicalClusterer(int link_type) {

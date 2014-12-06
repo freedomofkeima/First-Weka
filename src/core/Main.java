@@ -397,6 +397,23 @@ public class Main {
 				}
 				break;
 			case "17":
+				// load data
+				data = LoadARFF.loadARFF(Constants.ARFF_NUMERIC_PATH);
+				data.setClassIndex(data.numAttributes() - 1);
+				
+				if (data != null) {
+					Clusterer clusterer = new myPartitionalClusterer(1); // single_link
+					clusterer.buildClusterer(data);
+					
+					/**
+					 * Notice: clusterInstance() to choose the cluster index
+					 */
+					ClusterEvaluation cluster_eval = new ClusterEvaluation();
+					cluster_eval.setClusterer(clusterer);
+					cluster_eval.evaluateClusterer(data);
+					System.out.println("\nResults\n======\n");
+					System.out.println(cluster_eval.clusterResultsToString());
+				}
 
 				break;
 			case "999":

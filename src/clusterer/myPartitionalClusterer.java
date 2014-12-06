@@ -1,10 +1,11 @@
 package clusterer;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
-import clusterer.myHierarchicalClusterer.Cluster;
+import clusterer.Cluster;
 import weka.clusterers.ClusterEvaluation;
 import weka.clusterers.Clusterer;
 import weka.core.Capabilities;
@@ -36,36 +37,49 @@ public class myPartitionalClusterer implements Clusterer, CapabilitiesHandler  {
 
 	/** List of Attributes */
 	private int nCluster = 2; // number of cluster
-	private Cluster[] CC;
+	private ArrayList<Cluster> CC = new ArrayList<Cluster>();
 	private Instances data;
 	private static int Max_Itrations = 1000;
 	
 	//private Instance[] clustercore;
 
-	public void buildClusterer(Instances data) throws Exception {
-		this.data = data;
-		CC = new Cluster[nCluster];
+	public myPartitionalClusterer(int nCluster) {
+		this.nCluster = nCluster;
+		
+	}
+	
+	public void buildClusterer(Instances newdata) throws Exception {
+		data = new Instances(newdata);
+		int clusternumber =0;
 		//masukin core awal ke CC
 		Random r = new Random();
 		Set set = new HashSet();
-		while (set.size() < nCluster) 
+		while (set.size() <= nCluster) 
 		    set.add(r.nextInt(data.numInstances()));
+		Object[]hasil = set.toArray();
+		//System.out.println("isi set"+Integer.parseInt(hasil[0].toString()));
+		//System.out.println("isi set"+hasil[1].toString());
 		for(int i=0;i<nCluster;i++){
-			CC[i].add_element(this.data.instance((int) set.toArray()[i]));
-			CC[i].set_core();
+			Cluster C = new Cluster();
+			CC.add(C);
+			CC.get(i).add_element(data.instance(1));
+			CC.get(i).set_centroid();
 		}
 		for(int i=0;i<Max_Itrations;i++){
+			for(int j=0;j<nCluster;j++)
+				CC.get(j).elements.clear();
 			for(int j=0;j<data.numInstances();j++){
-				CC[clusterInstance(data.instance(j))].add_element(data.instance(j));
+				clusternumber = clusterInstance(data.instance(j));
+				CC.get(clusternumber).add_element(data.instance(j));
 				if(j== data.numInstances()-1){//hitung ulang corenya
 					boolean isConvergen = false;
 					for(int k=0;k<nCluster;k++)
-						isConvergen = CC[k].isConvergen();
+						isConvergen = CC.get(k).isConvergen();
 					if(isConvergen)
 						break;
 					else{ //data last dengan yg sekarang beda
 						for(int k=0;k<nCluster;k++)
-							CC[k].set_core();
+							CC.get(k).set_centroid();
 					}
 				}
 			}
@@ -91,7 +105,7 @@ public class myPartitionalClusterer implements Clusterer, CapabilitiesHandler  {
 		double[] d = new double[numberOfClusters()];
 		//hitung jarak ke cluster
 		for(int i=0;i<nCluster;i++)
-			d[i]=this.CC[i].getDistance(instance);	
+			d[i]=CC.get(i).getDistance(instance);	
 		return d;
 	}
 	
