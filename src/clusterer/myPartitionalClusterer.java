@@ -1,5 +1,9 @@
 package clusterer;
 
+import java.util.HashSet;
+import java.util.Random;
+import java.util.Set;
+
 import clusterer.myHierarchicalClusterer.Cluster;
 import weka.clusterers.ClusterEvaluation;
 import weka.clusterers.Clusterer;
@@ -34,7 +38,7 @@ public class myPartitionalClusterer implements Clusterer, CapabilitiesHandler  {
 	private int nCluster = 2; // number of cluster
 	private Cluster[] CC;
 	private Instances data;
-	private int Max_Itrations;
+	private static int Max_Itrations = 1000;
 	
 	//private Instance[] clustercore;
 
@@ -42,25 +46,45 @@ public class myPartitionalClusterer implements Clusterer, CapabilitiesHandler  {
 		this.data = data;
 		CC = new Cluster[nCluster];
 		//masukin core awal ke CC
-		for(int i=0;;i++){
-			CC[i].add_element(this.data.instance(1));
-			//hitung bagian tengah dari core
+		Random r = new Random();
+		Set set = new HashSet();
+		while (set.size() < nCluster) 
+		    set.add(r.nextInt(data.numInstances()));
+		for(int i=0;i<nCluster;i++){
+			CC[i].add_element(this.data.instance((int) set.toArray()[i]));
+			CC[i].set_core();
+		}
+		for(int i=0;i<Max_Itrations;i++){
+			for(int j=0;j<data.numInstances();j++){
+				CC[clusterInstance(data.instance(j))].add_element(data.instance(j));
+				if(j== data.numInstances()-1){//hitung ulang corenya
+					boolean isConvergen = false;
+					for(int k=0;k<nCluster;k++)
+						isConvergen = CC[k].isConvergen();
+					if(isConvergen)
+						break;
+					else{ //data last dengan yg sekarang beda
+						for(int k=0;k<nCluster;k++)
+							CC[k].set_core();
+					}
+				}
+			}
 		}
 	//	clustercore = new Instance[nCluster];
 	}
 
 	public int clusterInstance(Instance instance) throws Exception { //fungsi buat ngitung jaraknnya
 
-		double[] dist = distributionForInstance(instance);
+		double[] score = distributionForInstance(instance);
 
-		if (dist == null) {
+		if (score == null) {
 			throw new Exception("Null distribution predicted");
 		}
 
-		if (Utils.sum(dist) <= 0) {
+		if (Utils.sum(score) <= 0) {
 			throw new Exception("Unable to cluster instance");
 		}
-		return Utils.minIndex(dist);
+		return Utils.maxIndex(score);
 	}
 
 	public double[] distributionForInstance(Instance instance) throws Exception {//fungsi buat ngitung jaraknnya

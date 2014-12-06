@@ -41,11 +41,14 @@ public class myHierarchicalClusterer implements Clusterer, CapabilitiesHandler {
 		Cluster left;
 		Cluster right;
 		ArrayList<Instance> elements;
+		ArrayList<Instance> lastelements;//simpen instances sebelum nya , kalo yg baru sama dengan yg lama algo selesai
 		Instance core;
+		double epsilon=0.01;//
 		int height;
 
 		Cluster() {
 			elements = new ArrayList<Instance>();
+			lastelements = new ArrayList<Instance>();
 		}
 
 		Cluster getClone() {
@@ -105,9 +108,12 @@ public class myHierarchicalClusterer implements Clusterer, CapabilitiesHandler {
 		//emon
 		void set_core(){
 			int[] count = new int[elements.get(0).numAttributes()];
+			ArrayList<ArrayList<Integer>> group = new ArrayList<ArrayList<Integer>>(elements.get(0).numAttributes());
+			lastelements.clear();
 			for(int i=0;i<elements.size();i++){
+				lastelements.add(elements.get(i));
 				for (int j =0;j<elements.get(i).numAttributes();j++){
-					if(elements.get(i).attribute(j).isNumeric()){
+					if(!elements.get(i).attribute(j).isNumeric()){
 						
 					}else{//averaging
 						count[j]+= elements.get(i).value(j);
@@ -119,20 +125,30 @@ public class myHierarchicalClusterer implements Clusterer, CapabilitiesHandler {
 					}
 				}
 			}
-		//core = new Instance(elements.get(0));
-			
 		}
+		
 		int getDistance(Instance i){
 			int count = 0;
 			for(int j=0;j<core.numAttributes();j++){
 				if(core.attribute(j).isNumeric()){
-					
+					if(Math.abs(i.value(j) - core.value(j)) < epsilon)//kalo lebih besar dari batas toleransi, jaraknya naik
+						count++;
 				}else{ //sama atau kagak
-					//if (i.value(j) core.value(j))
-						//count++;
+					if (i.stringValue(j).equals(core.stringValue(j)))
+						count++;
 				}
 			}
 		return count;
+		}
+		
+		boolean isConvergen(){
+			boolean convergen = false;
+				if(elements.size()!=lastelements.size())
+					convergen = false;
+				else{//bandingin attribute2 di dalemnya
+					
+				}
+			return convergen;
 		}
 		
 	}
