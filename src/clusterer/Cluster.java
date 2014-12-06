@@ -1,23 +1,32 @@
 package clusterer;
 
 import java.util.ArrayList;
+
 import weka.core.Instance;
 import weka.core.InstanceComparator;
+import weka.core.Instances;
 
 class Cluster implements Cloneable {
 	Cluster left;
 	Cluster right;
 	ArrayList<Instance> elements;
 	ArrayList<Instance> lastelements;//simpen instances sebelum nya , kalo yg baru sama dengan yg lama algo selesai
+	Instances test;
 	Instance centroid;
 	double epsilon=0.01;//
 	int height;
 
 	Cluster() {
 		elements = new ArrayList<Instance>();
-		System.out.println("hello");
+		//System.out.println("hello");
 		lastelements = new ArrayList<Instance>();
 		
+	}
+	Cluster(Instances i) {
+		elements = new ArrayList<Instance>();
+		//System.out.println("hello");
+		lastelements = new ArrayList<Instance>();
+		test = new Instances(i);
 	}
 
 	Cluster getClone() {

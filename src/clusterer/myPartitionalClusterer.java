@@ -50,6 +50,7 @@ public class myPartitionalClusterer implements Clusterer, CapabilitiesHandler  {
 	
 	public void buildClusterer(Instances newdata) throws Exception {
 		data = new Instances(newdata);
+		data.setClassIndex(-1);
 		int clusternumber =0;
 		//masukin core awal ke CC
 		Random r = new Random();
@@ -60,7 +61,7 @@ public class myPartitionalClusterer implements Clusterer, CapabilitiesHandler  {
 		//System.out.println("isi set"+Integer.parseInt(hasil[0].toString()));
 		//System.out.println("isi set"+hasil[1].toString());
 		for(int i=0;i<nCluster;i++){
-			Cluster C = new Cluster();
+			Cluster C = new Cluster(data);
 			CC.add(C);
 			CC.get(i).add_element(data.instance(1));
 			CC.get(i).set_centroid();
@@ -69,7 +70,7 @@ public class myPartitionalClusterer implements Clusterer, CapabilitiesHandler  {
 			for(int j=0;j<nCluster;j++)
 				CC.get(j).elements.clear();
 			for(int j=0;j<data.numInstances();j++){
-				clusternumber = clusterInstance(data.instance(j));
+
 				CC.get(clusternumber).add_element(data.instance(j));
 				if(j== data.numInstances()-1){//hitung ulang corenya
 					boolean isConvergen = false;
@@ -104,11 +105,28 @@ public class myPartitionalClusterer implements Clusterer, CapabilitiesHandler  {
 	public double[] distributionForInstance(Instance instance) throws Exception {//fungsi buat ngitung jaraknnya
 		double[] d = new double[numberOfClusters()];
 		//hitung jarak ke cluster
-		for(int i=0;i<nCluster;i++)
-			d[i]=CC.get(i).getDistance(instance);	
+		
+		for(int i=0;i<nCluster;i++){
+			instance.setDataset(CC.get(0).test);
+			d[i]=distance(instance,CC.get(i).centroid);
+		}
 		return d;
 	}
 	
+	public int distance(Instance first,Instance second){
+		int distance = 0;
+		second.setDataset(data);
+		for(int j=0;j<first.numAttributes();j++){
+			if(second.attribute(j).isNumeric()){
+				if(Math.abs(first.value(j) - second.value(j)) < 0.01)//kalo lebih besar dari batas toleransi, jaraknya naik
+					distance++;
+			}else{ //sama atau kagak
+				if (first.stringValue(j).equals(second.stringValue(j)))
+					distance++;
+			}
+		}
+		return distance;
+	}
 
 	public int numberOfClusters() throws Exception {
 		return nCluster;
